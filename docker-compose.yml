@@ -1,0 +1,39 @@
+version: "3.9"
+services:
+
+    # PHP service
+    test-php:
+        build: ./php
+        container_name: test-php
+        working_dir: /var/www
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        ports:
+            - 8003:80
+        volumes:
+            - ~/.ssh:/root/.ssh
+            - ../test:/var/www
+            - ./php/php.ini:/usr/local/etc/php/php.ini
+        networks:
+            - test-network
+    # Nginx service
+    test-nginx:
+        image: nginx:alpine
+        container_name: test-nginx
+        ports:
+            - 8002:80
+        volumes:
+            - ../test/:/var/www
+            - ./nginx/:/etc/nginx/conf.d/
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        networks:
+            - test-network
+        links:
+            - test-php
+        depends_on:
+            - test-php
+
+networks:
+    test-network:
+        driver: bridge
