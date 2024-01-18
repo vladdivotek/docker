@@ -1,0 +1,82 @@
+version: "3.9"
+services:
+
+    # PHP service
+    project-php:
+        build: ./php
+        container_name: project-php
+        working_dir: /var/www
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        ports:
+            - 8001:80
+        volumes:
+            - ~/.ssh:/root/.ssh
+            - ../:/var/www
+            - ./php/php.ini:/usr/local/etc/php/php.ini
+        networks:
+            - project-network
+
+   # MySQL database service
+   project-db:
+       image: mysql:8
+       container_name: project-db
+       ports:
+           - "33061:3306"
+       environment:
+           MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+           MYSQL_PASSWORD: ${DB_PASSWORD}
+           MYSQL_USER: ${DB_USERNAME}
+           MYSQL_DATABASE: ${DB_DATABASE}
+       volumes:
+           - ./mysql/data:/var/lib/mysql
+       env_file:
+           - ./.env
+       networks:
+           - project-network
+
+    # # PostgresSQL database service
+    # project-db:
+    #     image: postgres:latest
+    #     container_name: project-db
+    #     ports:
+    #         - "54321:5432"
+    #     environment:
+    #         POSTGRES_USER: ${DB_USERNAME}
+    #         POSTGRES_PASSWORD: ${DB_PASSWORD}
+    #         POSTGRES_DB: ${DB_DATABASE}
+    #     volumes:
+    #         - ./postgres/data:/var/lib/postgresql/data
+    #     env_file:
+    #         - ./.env
+    #     networks:
+    #         - project-network
+
+    # Redis service
+    project-redis:
+        image: redis:alpine
+        container_name: project-redis
+        ports:
+            - 6379:6379
+        networks:
+            - project-network
+
+    # Nginx service
+    project-nginx:
+        image: nginx:alpine
+        container_name: project-nginx
+        ports:
+            - 8000:80
+        volumes:
+            - ../:/var/www
+            - ./nginx/:/etc/nginx/conf.d/
+        networks:
+            - project-network
+        links:
+            - project-php
+        depends_on:
+            - project-php
+
+networks:
+    project-network:
+        driver: bridge

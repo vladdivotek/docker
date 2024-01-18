@@ -1,0 +1,1 @@
+docker-compose --project-name=project up -d --build
